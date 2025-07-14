@@ -682,103 +682,101 @@ const SecondCardTable = forwardRef(({ refreshTrigger = 0 }: SecondCardTableProps
     toast.success("CSV export started")
   }
 
-  const exportToTXT = () => {
-    const filteredData = data.filter((record) => record.WeatherObservation && record.WeatherObservation.length > 0)
+   const exportToTXT = () => {
+      const filteredData = data.filter(
+        (record) =>
+          record.WeatherObservation && record.WeatherObservation.length > 0
+      );
 
-    if (filteredData.length === 0) {
-      toast.error("No weather observation data available to export")
-      return
-    }
+      if (filteredData.length === 0) {
+        toast.error("No weather observation data available to export");
+        return;
+      }
 
-    // Create TXT header with metadata
-    let txtContent = `Weather Observation Data Report\n`
-    txtContent += `Date Range: ${startDate} to ${endDate}\n`
-    txtContent += `Station: ${stationFilter === "all" ? "All Stations" : user?.station?.name || ""}\n`
-    txtContent += `Generated: ${new Date().toLocaleString()}\n\n`
+      const currentDate = new Date().toISOString().split("T")[0];
+      const currentTime = new Date().toLocaleTimeString();
 
-    // Create column headers
-    const headers = [
-      "Time (GMT)", "Station", "Total Cloud",
-      "Low Cloud Form", "Low Cloud Amount", "Low Cloud Height", "Low Cloud Direction",
-      "Medium Cloud Form", "Medium Cloud Amount", "Medium Cloud Height", "Medium Cloud Direction",
-      "High Cloud Form", "High Cloud Amount", "High Cloud Direction",
-      "Layer1 Form", "Layer1 Amount", "Layer1 Height",
-      "Layer2 Form", "Layer2 Amount", "Layer2 Height",
-      "Layer3 Form", "Layer3 Amount", "Layer3 Height",
-      "Layer4 Form", "Layer4 Amount", "Layer4 Height",
-      "Rainfall Start", "Rainfall End", "Since Previous", "During Previous", "Last 24 Hours",
-      "Wind 1st Anem", "Wind 2nd Anem", "Wind Speed", "Wind Direction", "Observer"
-    ]
+      // Create TXT header
+      let txtContent = `WEATHER OBSERVATION DATA REPORT
+${"=".repeat(60)}
 
-    // Format headers as fixed-width columns
-    txtContent += headers.map(h => h.padEnd(20)).join("") + "\n"
-    txtContent += "-".repeat(headers.length * 20) + "\n"
+REPORT INFORMATION:
+  Date Range: ${startDate} to ${endDate}
+  Station: ${stationFilter === "all" ? "All Stations" : user?.station?.name || ""}
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${filteredData.length}
 
-    // Create TXT rows with fixed-width formatting
-    const rows = filteredData.map((record) => {
-      const weatherObs = record.WeatherObservation[0] || {}
+DATA VALUES:
+${"=".repeat(60)}
+`;
 
-      const rowData = [
-        utcToHour(record.utcTime).padEnd(20),
-        (record.station?.name || "--").padEnd(20),
-        (weatherObs.totalCloudAmount || "--").padEnd(20),
-        (weatherObs.lowCloudForm || "--").padEnd(20),
-        (weatherObs.lowCloudAmount || "--").padEnd(20),
-        (weatherObs.lowCloudHeight || "--").padEnd(20),
-        (weatherObs.lowCloudDirection || "--").padEnd(20),
-        (weatherObs.mediumCloudForm || "--").padEnd(20),
-        (weatherObs.mediumCloudAmount || "--").padEnd(20),
-        (weatherObs.mediumCloudHeight || "--").padEnd(20),
-        (weatherObs.mediumCloudDirection || "--").padEnd(20),
-        (weatherObs.highCloudForm || "--").padEnd(20),
-        (weatherObs.highCloudAmount || "--").padEnd(20),
-        (weatherObs.highCloudDirection || "--").padEnd(20),
-        (weatherObs.layer1Form || "--").padEnd(20),
-        (weatherObs.layer1Amount || "--").padEnd(20),
-        (weatherObs.layer1Height || "--").padEnd(20),
-        (weatherObs.layer2Form || "--").padEnd(20),
-        (weatherObs.layer2Amount || "--").padEnd(20),
-        (weatherObs.layer2Height || "--").padEnd(20),
-        (weatherObs.layer3Form || "--").padEnd(20),
-        (weatherObs.layer3Amount || "--").padEnd(20),
-        (weatherObs.layer3Height || "--").padEnd(20),
-        (weatherObs.layer4Form || "--").padEnd(20),
-        (weatherObs.layer4Amount || "--").padEnd(20),
-        (weatherObs.layer4Height || "--").padEnd(20),
-        (weatherObs.rainfallTimeStart ? moment(weatherObs.rainfallTimeStart).format("MM/DD HH:mm") : "--").padEnd(20),
-        (weatherObs.rainfallTimeEnd ? moment(weatherObs.rainfallTimeEnd).format("MM/DD HH:mm") : "--").padEnd(20),
-        (weatherObs.rainfallSincePrevious || "--").padEnd(20),
-        (weatherObs.rainfallDuringPrevious || "--").padEnd(20),
-        (weatherObs.rainfallLast24Hours || "--").padEnd(20),
-        (weatherObs.windFirstAnemometer || "--").padEnd(20),
-        (weatherObs.windSecondAnemometer || "--").padEnd(20),
-        (weatherObs.windSpeed || "--").padEnd(20),
-        (weatherObs.windDirection || "--").padEnd(20),
-        (weatherObs.observerInitial || "--").padEnd(20)
-      ]
+      // Add data records
+      filteredData.forEach((record, index) => {
+        const weatherObs = record.WeatherObservation[0] || {};
 
-      return rowData.join("")
-    })
+        txtContent += `\nRecord ${index + 1}:\n`;
+        txtContent += `${"-".repeat(30)}\n`;
 
-    // Combine all content
-    txtContent += rows.join("\n")
+        // Format each field with label and value
+        txtContent += `Time (GMT)${" ".repeat(10)} ---> ${utcToHour(record.utcTime) || "--"}\n`;
+        txtContent += `Station${" ".repeat(13)} ---> ${record.station?.name || "--"}\n`;
+        txtContent += `Total Cloud${" ".repeat(9)} ---> ${weatherObs.totalCloudAmount || "--"}\n`;
+        txtContent += `Low Cloud Form${" ".repeat(6)} ---> ${weatherObs.lowCloudForm || "--"}\n`;
+        txtContent += `Low Cloud Amount${" ".repeat(4)} ---> ${weatherObs.lowCloudAmount || "--"}\n`;
+        txtContent += `Low Cloud Height${" ".repeat(4)} ---> ${weatherObs.lowCloudHeight || "--"}\n`;
+        txtContent += `Low Cloud Direction --> ${weatherObs.lowCloudDirection || "--"}\n`;
+        txtContent += `Medium Cloud Form${" ".repeat(3)} ---> ${weatherObs.mediumCloudForm || "--"}\n`;
+        txtContent += `Medium Cloud Amount --> ${weatherObs.mediumCloudAmount || "--"}\n`;
+        txtContent += `Medium Cloud Height --> ${weatherObs.mediumCloudHeight || "--"}\n`;
+        txtContent += `Medium Cloud Direction -> ${weatherObs.mediumCloudDirection || "--"}\n`;
+        txtContent += `High Cloud Form${" ".repeat(5)} ---> ${weatherObs.highCloudForm || "--"}\n`;
+        txtContent += `High Cloud Amount${" ".repeat(3)} ---> ${weatherObs.highCloudAmount || "--"}\n`;
+        txtContent += `High Cloud Direction --> ${weatherObs.highCloudDirection || "--"}\n`;
+        txtContent += `Layer1 Form${" ".repeat(8)} ---> ${weatherObs.layer1Form || "--"}\n`;
+        txtContent += `Layer1 Amount${" ".repeat(6)} ---> ${weatherObs.layer1Amount || "--"}\n`;
+        txtContent += `Layer1 Height${" ".repeat(6)} ---> ${weatherObs.layer1Height || "--"}\n`;
+        txtContent += `Layer2 Form${" ".repeat(8)} ---> ${weatherObs.layer2Form || "--"}\n`;
+        txtContent += `Layer2 Amount${" ".repeat(6)} ---> ${weatherObs.layer2Amount || "--"}\n`;
+        txtContent += `Layer2 Height${" ".repeat(6)} ---> ${weatherObs.layer2Height || "--"}\n`;
+        txtContent += `Layer3 Form${" ".repeat(8)} ---> ${weatherObs.layer3Form || "--"}\n`;
+        txtContent += `Layer3 Amount${" ".repeat(6)} ---> ${weatherObs.layer3Amount || "--"}\n`;
+        txtContent += `Layer3 Height${" ".repeat(6)} ---> ${weatherObs.layer3Height || "--"}\n`;
+        txtContent += `Layer4 Form${" ".repeat(8)} ---> ${weatherObs.layer4Form || "--"}\n`;
+        txtContent += `Layer4 Amount${" ".repeat(6)} ---> ${weatherObs.layer4Amount || "--"}\n`;
+        txtContent += `Layer4 Height${" ".repeat(6)} ---> ${weatherObs.layer4Height || "--"}\n`;
+        txtContent += `Rainfall Start${" ".repeat(6)} ---> ${weatherObs.rainfallTimeStart ? moment(weatherObs.rainfallTimeStart).format("MM/DD HH:mm") : "--"}\n`;
+        txtContent += `Rainfall End${" ".repeat(8)} ---> ${weatherObs.rainfallTimeEnd ? moment(weatherObs.rainfallTimeEnd).format("MM/DD HH:mm") : "--"}\n`;
+        txtContent += `Since Previous${" ".repeat(6)} ---> ${weatherObs.rainfallSincePrevious || "--"}\n`;
+        txtContent += `During Previous${" ".repeat(5)} ---> ${weatherObs.rainfallDuringPrevious || "--"}\n`;
+        txtContent += `Last 24 Hours${" ".repeat(6)} ---> ${weatherObs.rainfallLast24Hours || "--"}\n`;
+        txtContent += `Wind 1st Anem${" ".repeat(6)} ---> ${weatherObs.windFirstAnemometer || "--"}\n`;
+        txtContent += `Wind 2nd Anem${" ".repeat(6)} ---> ${weatherObs.windSecondAnemometer || "--"}\n`;
+        txtContent += `Wind Speed${" ".repeat(9)} ---> ${weatherObs.windSpeed || "--"}\n`;
+        txtContent += `Wind Direction${" ".repeat(6)} ---> ${weatherObs.windDirection || "--"}\n`;
+        txtContent += `Observer${" ".repeat(12)} ---> ${weatherObs.observerInitial || "--"}\n`;
+      });
 
-    // Create download link
-    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute(
-      "download",
-      `weather_observation_${startDate}_to_${endDate}.txt`
-    )
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+      // Add footer
+      txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`;
 
-    toast.success("TXT export started")
-  }
+      // Create and download file
+      const blob = new Blob([txtContent], {
+        type: "text/plain;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `weather_observation_${startDate}_to_${endDate}_${currentDate}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success("Weather observation data exported to TXT successfully");
+    };
+
 
   return (
     <Card className="shadow-xl border-none overflow-hidden bg-gradient-to-br from-white to-slate-50">

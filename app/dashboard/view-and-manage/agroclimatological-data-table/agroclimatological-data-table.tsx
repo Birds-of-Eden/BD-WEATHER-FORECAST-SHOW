@@ -331,7 +331,7 @@ export default function AgroclimatologicalDataTable() {
     URL.revokeObjectURL(url);
   }
 
-  function exportToTXT(
+ function exportToTXT(
     data: AgroclimatologicalData[],
     filename = "agroclimatological_data.txt"
   ) {
@@ -340,27 +340,65 @@ export default function AgroclimatologicalDataTable() {
       return;
     }
 
+    const currentDate = new Date().toISOString().split("T")[0];
+    const currentTime = new Date().toLocaleTimeString();
+
+    // Get headers excluding object types and specified fields
+    const excludedFields = [
+      "id",
+      "createdAt",
+      "updatedAt",
+      "elevation",
+      "userId",
+      "stationId",
+    ];
     const headers = Object.keys(data[0]).filter(
-      (k) => typeof data[0][k as keyof AgroclimatologicalData] !== "object"
-    );
-    const rows = data.map((row) =>
-      headers
-        .map((key) => {
-          const val = row[key as keyof AgroclimatologicalData];
-          return typeof val === "number" || typeof val === "string"
-            ? `${val}`
-            : "";
-        })
-        .join(",")
+      (k) =>
+        typeof data[0][k as keyof AgroclimatologicalData] !== "object" &&
+        !excludedFields.includes(k)
     );
 
-    const csvContent = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/plain;charset=utf-8;" });
+    // Create header section
+    let txtContent = `AGROCLIMATOLOGICAL DATA REPORT
+${"=".repeat(60)}
+
+REPORT INFORMATION:
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${data.length}
+
+DATA VALUES:
+${"=".repeat(60)}
+`;
+
+    // Add data rows in the new format
+    data.forEach((row, index) => {
+      txtContent += `\nRecord ${index + 1}:\n`;
+      txtContent += `${"-".repeat(30)}\n`;
+
+      headers.forEach((key) => {
+        const val = row[key as keyof AgroclimatologicalData];
+        const formattedValue =
+          typeof val === "number" || typeof val === "string" ? `${val}` : "N/A";
+
+        // Format the line with field name and value
+        txtContent += `${key.padEnd(20)} ---> ${formattedValue}\n`;
+      });
+    });
+
+    // Add footer
+    txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`;
+
+    // Create and download file
+    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = filename;
+    link.download =
+      filename.replace(".txt", `_${currentDate}.txt`) ||
+      `agroclimatological_data_${currentDate}.txt`;
     link.click();
 
     URL.revokeObjectURL(url);

@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from "react"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Loader2,
   Download,
@@ -15,8 +15,8 @@ import {
   Filter,
   LineChart,
   ChevronDown,
-} from "lucide-react"
-import { useSession } from "@/lib/auth-client"
+} from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 import {
   Dialog,
   DialogContent,
@@ -24,84 +24,95 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { toast } from "sonner"
-import { differenceInDays, parseISO, isValid, format } from "date-fns"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import moment from "moment"
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { differenceInDays, parseISO, isValid, format } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import moment from "moment";
 
 interface Station {
-  id: string
-  stationId: string
-  name: string
+  id: string;
+  stationId: string;
+  name: string;
 }
 
 // Determine if a record can be edited based on user role and time elapsed
 const canEditRecord = (record: any, user: any): boolean => {
-  if (!user) return false
-  if (!record.createdAt) return true
+  if (!user) return false;
+  if (!record.createdAt) return true;
 
   try {
-    const submissionDate = parseISO(record.createdAt)
-    if (!isValid(submissionDate)) return true
+    const submissionDate = parseISO(record.createdAt);
+    if (!isValid(submissionDate)) return true;
 
-    const now = new Date()
-    const daysDifference = differenceInDays(now, submissionDate)
-    const role = user.role
-    const userId = user.id
-    const userStationId = user.station?.id
-    const recordStationId = record.ObservingTime?.stationId
-    const recordUserId = record.ObservingTime?.userId
+    const now = new Date();
+    const daysDifference = differenceInDays(now, submissionDate);
+    const role = user.role;
+    const userId = user.id;
+    const userStationId = user.station?.id;
+    const recordStationId = record.ObservingTime?.stationId;
+    const recordUserId = record.ObservingTime?.userId;
 
-    if (role === "super_admin") return daysDifference <= 365
+    if (role === "super_admin") return daysDifference <= 365;
     if (role === "station_admin") {
-      return daysDifference <= 30 && userStationId === recordStationId
+      return daysDifference <= 30 && userStationId === recordStationId;
     }
     if (role === "observer") {
-      return daysDifference <= 2 && userId === recordUserId
+      return daysDifference <= 2 && userId === recordUserId;
     }
-    return false
+    return false;
   } catch (e) {
-    console.warn("Error in canEditRecord:", e)
-    return false
+    console.warn("Error in canEditRecord:", e);
+    return false;
   }
-}
+};
 
 const DailySummaryTable = forwardRef((props, ref) => {
-  const [currentData, setCurrentData] = useState<any[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
-  const [refreshing, setRefreshing] = useState<boolean>(false)
-  const { data: session } = useSession()
-  const user = session?.user
-  const isSuperAdmin = user?.role === "super_admin"
-  const isStationAdmin = user?.role === "station_admin"
+  const [currentData, setCurrentData] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const { data: session } = useSession();
+  const user = session?.user;
+  const isSuperAdmin = user?.role === "super_admin";
+  const isStationAdmin = user?.role === "station_admin";
   const [headerInfo, setHeaderInfo] = useState({
     dataType: "SY",
     stationNo: "41953",
     year: "24",
     month: "11",
     day: "03",
-  })
+  });
 
   // Filter states
-  const today = format(new Date(), "yyyy-MM-dd")
-  const [startDate, setStartDate] = useState(today)
-  const [endDate, setEndDate] = useState(today)
-  const [dateError, setDateError] = useState<string | null>(null)
-  const [stationFilter, setStationFilter] = useState("all")
-  const [stations, setStations] = useState<Station[]>([])
+  const today = format(new Date(), "yyyy-MM-dd");
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState(today);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [stationFilter, setStationFilter] = useState("all");
+  const [stations, setStations] = useState<Station[]>([]);
 
   // Edit dialog state
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [selectedRecord, setSelectedRecord] = useState<any>(null)
-  const [editFormData, setEditFormData] = useState<any>({})
-  const [isSaving, setIsSaving] = useState(false)
-  const [isPermissionDeniedOpen, setIsPermissionDeniedOpen] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPermissionDeniedOpen, setIsPermissionDeniedOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // First, create a validation map based on your measurements configuration
   const fieldValidations = {
@@ -121,7 +132,7 @@ const DailySummaryTable = forwardRef((props, ref) => {
     avTotalCloud: { length: 1 }, // octas - must be exactly 1 digit
     lowestVisibility: { length: 3 }, // km - must be exactly 3 digits
     totalRainDuration: { length: 4 }, // H-M (format HHMM) - must be exactly 4 digits
-  }
+  };
 
   // Expose the getData method via ref
   useImperativeHandle(ref, () => ({
@@ -131,30 +142,31 @@ const DailySummaryTable = forwardRef((props, ref) => {
         dataType: headerInfo.dataType,
         stationNo: headerInfo.stationNo,
         date: item.ObservingTime?.utcTime || new Date().toISOString(),
-      }))
+      }));
     },
-  }))
+  }));
 
   // Function to fetch the most recent data
   const fetchLatestData = async () => {
-    setRefreshing(true)
+    setRefreshing(true);
     try {
-      const url = `/api/daily-summary?startDate=${startDate}&endDate=${endDate}${stationFilter !== "all" ? `&stationId=${stationFilter}` : ""
-        }`
-      const res = await fetch(url)
+      const url = `/api/daily-summary?startDate=${startDate}&endDate=${endDate}${
+        stationFilter !== "all" ? `&stationId=${stationFilter}` : ""
+      }`;
+      const res = await fetch(url);
       if (!res.ok) {
-        throw new Error("Failed to fetch daily summary data")
+        throw new Error("Failed to fetch daily summary data");
       }
-      const data = await res.json()
+      const data = await res.json();
 
       if (data.length > 0) {
-        setCurrentData(data)
+        setCurrentData(data);
 
         // Extract header info from the first entry if available
-        const firstEntry = data[0]
+        const firstEntry = data[0];
         const observingTime = firstEntry.ObservingTime?.utcTime
           ? new Date(firstEntry.ObservingTime.utcTime)
-          : new Date()
+          : new Date();
 
         setHeaderInfo({
           dataType: firstEntry.dataType?.substring(0, 2) || "SY",
@@ -162,228 +174,311 @@ const DailySummaryTable = forwardRef((props, ref) => {
           year: observingTime.getFullYear().toString().substring(2),
           month: (observingTime.getMonth() + 1).toString().padStart(2, "0"),
           day: observingTime.getDate().toString().padStart(2, "0"),
-        })
+        });
       } else {
-        setCurrentData([])
+        setCurrentData([]);
       }
     } catch (error) {
-      console.error("Failed to fetch latest data:", error)
-      toast.error("Failed to fetch daily summary data")
+      console.error("Failed to fetch latest data:", error);
+      toast.error("Failed to fetch daily summary data");
     } finally {
-      setLoading(false)
-      setRefreshing(false)
+      setLoading(false);
+      setRefreshing(false);
     }
-  }
+  };
 
   // Fetch stations if super admin
   const fetchStations = async () => {
     if (isSuperAdmin) {
       try {
-        const response = await fetch("/api/stations")
+        const response = await fetch("/api/stations");
         if (!response.ok) {
-          throw new Error("Failed to fetch stations")
+          throw new Error("Failed to fetch stations");
         }
-        const stationsResult = await response.json()
-        setStations(stationsResult)
+        const stationsResult = await response.json();
+        setStations(stationsResult);
       } catch (error) {
-        console.error("Error fetching stations:", error)
-        toast.error("Failed to fetch stations")
+        console.error("Error fetching stations:", error);
+        toast.error("Failed to fetch stations");
       }
     }
-  }
+  };
 
   // Load data on component mount and when filters change
   useEffect(() => {
-    fetchLatestData()
-    fetchStations()
-  }, [startDate, endDate, stationFilter])
+    fetchLatestData();
+    fetchStations();
+  }, [startDate, endDate, stationFilter]);
 
   // Date navigation functions
   const goToPreviousWeek = () => {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const daysInRange = differenceInDays(end, start)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const daysInRange = differenceInDays(end, start);
 
     // Calculate the new date range
-    const newStart = new Date(start)
-    newStart.setDate(start.getDate() - (daysInRange + 1))
+    const newStart = new Date(start);
+    newStart.setDate(start.getDate() - (daysInRange + 1));
 
-    const newEnd = new Date(start)
-    newEnd.setDate(start.getDate() - 1)
+    const newEnd = new Date(start);
+    newEnd.setDate(start.getDate() - 1);
 
     // Always update the dates when going back
-    setStartDate(format(newStart, "yyyy-MM-dd"))
-    setEndDate(format(newEnd, "yyyy-MM-dd"))
-    setDateError(null)
-  }
+    setStartDate(format(newStart, "yyyy-MM-dd"));
+    setEndDate(format(newEnd, "yyyy-MM-dd"));
+    setDateError(null);
+  };
 
   const goToNextWeek = () => {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const daysInRange = differenceInDays(end, start)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const daysInRange = differenceInDays(end, start);
 
     // Calculate the new date range
-    const newStart = new Date(start)
-    newStart.setDate(start.getDate() + (daysInRange + 1))
+    const newStart = new Date(start);
+    newStart.setDate(start.getDate() + (daysInRange + 1));
 
-    const newEnd = new Date(newStart)
-    newEnd.setDate(newStart.getDate() + daysInRange)
+    const newEnd = new Date(newStart);
+    newEnd.setDate(newStart.getDate() + daysInRange);
 
     // Get today's date at midnight for comparison
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     // If the new range would go beyond today, adjust it
     if (newEnd > today) {
       // If we're already at or beyond today, don't go further
       if (end >= today) {
-        return
+        return;
       }
       // Otherwise, set the end to today and adjust the start accordingly
-      const adjustedEnd = new Date(today)
-      const adjustedStart = new Date(adjustedEnd)
-      adjustedStart.setDate(adjustedEnd.getDate() - daysInRange)
+      const adjustedEnd = new Date(today);
+      const adjustedStart = new Date(adjustedEnd);
+      adjustedStart.setDate(adjustedEnd.getDate() - daysInRange);
 
-      setStartDate(format(adjustedStart, "yyyy-MM-dd"))
-      setEndDate(format(adjustedEnd, "yyyy-MM-dd"))
+      setStartDate(format(adjustedStart, "yyyy-MM-dd"));
+      setEndDate(format(adjustedEnd, "yyyy-MM-dd"));
     } else {
       // Update to the new range if it's valid
-      setStartDate(format(newStart, "yyyy-MM-dd"))
-      setEndDate(format(newEnd, "yyyy-MM-dd"))
+      setStartDate(format(newStart, "yyyy-MM-dd"));
+      setEndDate(format(newEnd, "yyyy-MM-dd"));
     }
 
-    setDateError(null)
-  }
+    setDateError(null);
+  };
 
   // Handle date changes with validation
   const handleDateChange = (type: "start" | "end", newDate: string) => {
-    const date = new Date(newDate)
-    const otherDate = type === "start" ? new Date(endDate) : new Date(startDate)
+    const date = new Date(newDate);
+    const otherDate =
+      type === "start" ? new Date(endDate) : new Date(startDate);
 
     if (isNaN(date.getTime())) {
-      setDateError("Invalid date format")
-      return
+      setDateError("Invalid date format");
+      return;
     }
 
     // Reset error if dates are valid
-    setDateError(null)
+    setDateError(null);
 
     if (type === "start") {
       if (date > otherDate) {
-        setDateError("Start date cannot be after end date")
-        return
+        setDateError("Start date cannot be after end date");
+        return;
       }
-      setStartDate(newDate)
+      setStartDate(newDate);
     } else {
       if (date < otherDate) {
-        setDateError("End date cannot be before start date")
-        return
+        setDateError("End date cannot be before start date");
+        return;
       }
-      setEndDate(newDate)
+      setEndDate(newDate);
     }
-  }
+  };
 
   // Get station name by ID
   const getStationNameById = (stationId: string): string => {
-    const station = stations.find((s) => s.id === stationId)
-    return station ? station.name : stationId
-  }
+    const station = stations.find((s) => s.id === stationId);
+    return station ? station.name : stationId;
+  };
 
   // Handle edit click
   const handleEditClick = (record: any) => {
     if (user && canEditRecord(record, user)) {
-      setSelectedRecord(record)
-      setEditFormData(record)
-      setFieldErrors({}) // Clear any previous errors
-      setIsEditDialogOpen(true)
+      setSelectedRecord(record);
+      setEditFormData(record);
+      setFieldErrors({}); // Clear any previous errors
+      setIsEditDialogOpen(true);
     } else {
-      setIsPermissionDeniedOpen(true)
+      setIsPermissionDeniedOpen(true);
     }
-  }
+  };
 
   // In your component, add this handler for input validation
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target
-    const validation = fieldValidations[id as keyof typeof fieldValidations]
+    const { id, value } = e.target;
+    const validation = fieldValidations[id as keyof typeof fieldValidations];
 
     // Only allow numbers (no decimals, letters, or special characters)
-    const numericValue = value.replace(/[^0-9]/g, "")
+    const numericValue = value.replace(/[^0-9]/g, "");
 
     // Enforce maximum length
-    const truncatedValue = numericValue.slice(0, validation.length)
+    const truncatedValue = numericValue.slice(0, validation.length);
 
     // Validate the input and set appropriate error messages
-    let error = ""
+    let error = "";
     if (truncatedValue.length === 0) {
-      error = `This field is required`
+      error = `This field is required`;
     } else if (truncatedValue.length < validation.length) {
-      error = `Must be exactly ${validation.length} digits (currently ${truncatedValue.length})`
+      error = `Must be exactly ${validation.length} digits (currently ${truncatedValue.length})`;
     } else if (truncatedValue.length > validation.length) {
-      error = `Cannot exceed ${validation.length} digits`
+      error = `Cannot exceed ${validation.length} digits`;
     }
 
     setEditFormData((prev: any) => ({
       ...prev,
       [id]: truncatedValue,
-    }))
+    }));
 
     setFieldErrors((prev) => ({
       ...prev,
       [id]: error,
-    }))
-  }
+    }));
+  };
 
   const validateForm = (): boolean => {
-    const errors: Record<string, string> = {}
-    let isValid = true
+    const errors: Record<string, string> = {};
+    let isValid = true;
 
     formFields.forEach((field) => {
-      const value = editFormData[field.id] || ""
-      const validation = fieldValidations[field.id as keyof typeof fieldValidations]
+      const value = editFormData[field.id] || "";
+      const validation =
+        fieldValidations[field.id as keyof typeof fieldValidations];
 
       if (value.length === 0) {
-        errors[field.id] = `This field is required`
-        isValid = false
+        errors[field.id] = `This field is required`;
+        isValid = false;
       } else if (value.length !== validation.length) {
-        errors[field.id] = `Must be exactly ${validation.length} digits (currently ${value.length})`
-        isValid = false
+        errors[field.id] =
+          `Must be exactly ${validation.length} digits (currently ${value.length})`;
+        isValid = false;
       }
-    })
+    });
 
-    setFieldErrors(errors)
-    return isValid
-  }
+    setFieldErrors(errors);
+    return isValid;
+  };
 
   const formFields = [
-    { id: "avStationPressure", label: "Av. Station Pressure (hPa)", bg: "bg-blue-50", requiredLength: 5 },
-    { id: "avSeaLevelPressure", label: "Av. Sea-Level Pressure (hPa)", bg: "bg-indigo-50", requiredLength: 5 },
-    { id: "avDryBulbTemperature", label: "Av. Dry-Bulb Temperature (°C)", bg: "bg-blue-50", requiredLength: 3 },
-    { id: "avWetBulbTemperature", label: "Av. Wet Bulb Temperature (°C)", bg: "bg-indigo-50", requiredLength: 3 },
-    { id: "maxTemperature", label: "Max Temperature (°C)", bg: "bg-blue-50", requiredLength: 3 },
-    { id: "minTemperature", label: "Min Temperature (°C)", bg: "bg-indigo-50", requiredLength: 3 },
-    { id: "totalPrecipitation", label: "Total Precipitation (mm)", bg: "bg-blue-50", requiredLength: 3 },
-    { id: "avDewPointTemperature", label: "Av. Dew Point Temperature (°C)", bg: "bg-indigo-50", requiredLength: 3 },
-    { id: "avRelativeHumidity", label: "Av. Relative Humidity (%)", bg: "bg-blue-50", requiredLength: 3 },
-    { id: "windSpeed", label: "Wind Speed (m/s)", bg: "bg-indigo-50", requiredLength: 3 },
-    { id: "windDirectionCode", label: "Wind Direction (16Pts)", bg: "bg-blue-50", requiredLength: 2 },
-    { id: "maxWindSpeed", label: "Max Wind Speed (m/s)", bg: "bg-indigo-50", requiredLength: 3 },
-    { id: "maxWindDirection", label: "Max Wind Direction (16Pts)", bg: "bg-blue-50", requiredLength: 2 },
-    { id: "avTotalCloud", label: "Av. Total Cloud (oktas)", bg: "bg-indigo-50", requiredLength: 1 },
-    { id: "lowestVisibility", label: "Lowest Visibility (km)", bg: "bg-blue-50", requiredLength: 3 },
-    { id: "totalRainDuration", label: "Total Rain Duration (H-M)", bg: "bg-indigo-50", requiredLength: 4 },
-  ]
+    {
+      id: "avStationPressure",
+      label: "Av. Station Pressure (hPa)",
+      bg: "bg-blue-50",
+      requiredLength: 5,
+    },
+    {
+      id: "avSeaLevelPressure",
+      label: "Av. Sea-Level Pressure (hPa)",
+      bg: "bg-indigo-50",
+      requiredLength: 5,
+    },
+    {
+      id: "avDryBulbTemperature",
+      label: "Av. Dry-Bulb Temperature (°C)",
+      bg: "bg-blue-50",
+      requiredLength: 3,
+    },
+    {
+      id: "avWetBulbTemperature",
+      label: "Av. Wet Bulb Temperature (°C)",
+      bg: "bg-indigo-50",
+      requiredLength: 3,
+    },
+    {
+      id: "maxTemperature",
+      label: "Max Temperature (°C)",
+      bg: "bg-blue-50",
+      requiredLength: 3,
+    },
+    {
+      id: "minTemperature",
+      label: "Min Temperature (°C)",
+      bg: "bg-indigo-50",
+      requiredLength: 3,
+    },
+    {
+      id: "totalPrecipitation",
+      label: "Total Precipitation (mm)",
+      bg: "bg-blue-50",
+      requiredLength: 3,
+    },
+    {
+      id: "avDewPointTemperature",
+      label: "Av. Dew Point Temperature (°C)",
+      bg: "bg-indigo-50",
+      requiredLength: 3,
+    },
+    {
+      id: "avRelativeHumidity",
+      label: "Av. Relative Humidity (%)",
+      bg: "bg-blue-50",
+      requiredLength: 3,
+    },
+    {
+      id: "windSpeed",
+      label: "Wind Speed (m/s)",
+      bg: "bg-indigo-50",
+      requiredLength: 3,
+    },
+    {
+      id: "windDirectionCode",
+      label: "Wind Direction (16Pts)",
+      bg: "bg-blue-50",
+      requiredLength: 2,
+    },
+    {
+      id: "maxWindSpeed",
+      label: "Max Wind Speed (m/s)",
+      bg: "bg-indigo-50",
+      requiredLength: 3,
+    },
+    {
+      id: "maxWindDirection",
+      label: "Max Wind Direction (16Pts)",
+      bg: "bg-blue-50",
+      requiredLength: 2,
+    },
+    {
+      id: "avTotalCloud",
+      label: "Av. Total Cloud (oktas)",
+      bg: "bg-indigo-50",
+      requiredLength: 1,
+    },
+    {
+      id: "lowestVisibility",
+      label: "Lowest Visibility (km)",
+      bg: "bg-blue-50",
+      requiredLength: 3,
+    },
+    {
+      id: "totalRainDuration",
+      label: "Total Rain Duration (H-M)",
+      bg: "bg-indigo-50",
+      requiredLength: 4,
+    },
+  ];
 
   // Save edited data
   const handleSaveEdit = async () => {
-    if (!selectedRecord) return
+    if (!selectedRecord) return;
 
     // Validate form before saving
     if (!validateForm()) {
-      toast.error("Please fix all validation errors before saving")
-      return
+      toast.error("Please fix all validation errors before saving");
+      return;
     }
 
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       const response = await fetch("/api/daily-summary", {
         method: "PUT",
@@ -394,36 +489,38 @@ const DailySummaryTable = forwardRef((props, ref) => {
           id: selectedRecord.id,
           ...editFormData,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to update record")
+        throw new Error("Failed to update record");
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       // Update local state
       setCurrentData((prevData) =>
-        prevData.map((item) => (item.id === selectedRecord.id ? { ...item, ...editFormData } : item)),
-      )
+        prevData.map((item) =>
+          item.id === selectedRecord.id ? { ...item, ...editFormData } : item
+        )
+      );
 
-      toast.success("Record updated successfully")
-      setIsEditDialogOpen(false)
-      setFieldErrors({}) // Clear errors on successful save
+      toast.success("Record updated successfully");
+      setIsEditDialogOpen(false);
+      setFieldErrors({}); // Clear errors on successful save
     } catch (error) {
-      console.error("Error updating record:", error)
-      toast.error(`Failed to update record: ${error.message}`)
+      console.error("Error updating record:", error);
+      toast.error(`Failed to update record: ${error.message}`);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const formatValue = (value: any): string => {
     // If value is null/undefined/empty, return dash
     if (value === null || value === undefined || value === "") return "-";
 
     // Convert to number if it's a string
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
 
     // If it's a valid number, return it as integer (no decimals)
     if (!isNaN(numValue)) {
@@ -436,96 +533,120 @@ const DailySummaryTable = forwardRef((props, ref) => {
 
   // Function to export data as CSV
   const exportToCSV = () => {
-    if (!currentData || currentData.length === 0) return
+    if (!currentData || currentData.length === 0) return;
 
     // Create headers
     let csvContent =
-      "Date,Station,Av Station Pressure,Av Sea-Level Pressure,Av Dry-Bulb Temperature,Av Wet Bulb Temperature,Max Temperature,Min Temperature,Total Precipitation,Av Dew Point Temperature,Av Relative Humidity,Wind Speed,Wind Direction,Max Wind Speed,Max Wind Direction,Av Total Cloud,Lowest Visibility,Total Rain Duration\n"
+      "Date,Station,Av Station Pressure,Av Sea-Level Pressure,Av Dry-Bulb Temperature,Av Wet Bulb Temperature,Max Temperature,Min Temperature,Total Precipitation,Av Dew Point Temperature,Av Relative Humidity,Wind Speed,Wind Direction,Max Wind Speed,Max Wind Direction,Av Total Cloud,Lowest Visibility,Total Rain Duration\n";
 
     // Add data rows
     currentData.forEach((entry) => {
-      const observingTime = entry.ObservingTime?.utcTime ? new Date(entry.ObservingTime.utcTime) : new Date()
-      const dateStr = observingTime.toLocaleDateString()
+      const observingTime = entry.ObservingTime?.utcTime
+        ? new Date(entry.ObservingTime.utcTime)
+        : new Date();
+      const dateStr = observingTime.toLocaleDateString();
 
-      let row = `${dateStr},`
-      row += `${entry.ObservingTime?.station?.name || ""},`
-      row += `${entry.avStationPressure || ""},`
-      row += `${entry.avSeaLevelPressure || ""},`
-      row += `${entry.avDryBulbTemperature || ""},`
-      row += `${entry.avWetBulbTemperature || ""},`
-      row += `${entry.maxTemperature || ""},`
-      row += `${entry.minTemperature || ""},`
-      row += `${entry.totalPrecipitation || ""},`
-      row += `${entry.avDewPointTemperature || ""},`
-      row += `${entry.avRelativeHumidity || ""},`
-      row += `${entry.windSpeed || ""},`
-      row += `${entry.windDirectionCode || ""},`
-      row += `${entry.maxWindSpeed || ""},`
-      row += `${entry.maxWindDirection || ""},`
-      row += `${entry.avTotalCloud || ""},`
-      row += `${entry.lowestVisibility || ""},`
-      row += `${entry.totalRainDuration || ""}\n`
-      csvContent += row
-    })
+      let row = `${dateStr},`;
+      row += `${entry.ObservingTime?.station?.name || ""},`;
+      row += `${entry.avStationPressure || ""},`;
+      row += `${entry.avSeaLevelPressure || ""},`;
+      row += `${entry.avDryBulbTemperature || ""},`;
+      row += `${entry.avWetBulbTemperature || ""},`;
+      row += `${entry.maxTemperature || ""},`;
+      row += `${entry.minTemperature || ""},`;
+      row += `${entry.totalPrecipitation || ""},`;
+      row += `${entry.avDewPointTemperature || ""},`;
+      row += `${entry.avRelativeHumidity || ""},`;
+      row += `${entry.windSpeed || ""},`;
+      row += `${entry.windDirectionCode || ""},`;
+      row += `${entry.maxWindSpeed || ""},`;
+      row += `${entry.maxWindDirection || ""},`;
+      row += `${entry.avTotalCloud || ""},`;
+      row += `${entry.lowestVisibility || ""},`;
+      row += `${entry.totalRainDuration || ""}\n`;
+      csvContent += row;
+    });
 
     // Create download link
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `daily_summary_${headerInfo.year}${headerInfo.month}${headerInfo.day}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `daily_summary_${headerInfo.year}${headerInfo.month}${headerInfo.day}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Function to export data as TXT
   const exportToTXT = () => {
-    if (!currentData || currentData.length === 0) return
+    if (!currentData || currentData.length === 0) return;
 
-    // Create headers
-    let txtContent = `Daily Summary Data Report\n`
-    txtContent += `Station: ${headerInfo.stationNo}\n`
-    txtContent += `Date Range: ${startDate} to ${endDate}\n\n`
+    const currentDate = new Date().toISOString().split("T")[0];
+    const currentTime = new Date().toLocaleTimeString();
 
-    txtContent += `Date\tStation\tAv Station Pressure\tAv Sea-Level Pressure\tAv Dry-Bulb Temperature\tAv Wet Bulb Temperature\tMax Temperature\tMin Temperature\tTotal Precipitation\tAv Dew Point Temperature\tAv Relative Humidity\tWind Speed\tWind Direction\tMax Wind Speed\tMax Wind Direction\tAv Total Cloud\tLowest Visibility\tTotal Rain Duration\n`
+    // Create TXT header
+    let txtContent = `DAILY SUMMARY DATA REPORT
+${"=".repeat(60)}
 
-    // Add data rows
-    currentData.forEach((entry) => {
-      const observingTime = entry.ObservingTime?.utcTime ? new Date(entry.ObservingTime.utcTime) : new Date()
-      const dateStr = observingTime.toLocaleDateString()
+REPORT INFORMATION:
+  Station: ${headerInfo.stationNo}
+  Date Range: ${startDate} to ${endDate}
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${currentData.length}
 
-      let row = `${dateStr}\t`
-      row += `${entry.ObservingTime?.station?.name || ""}\t`
-      row += `${entry.avStationPressure || ""}\t`
-      row += `${entry.avSeaLevelPressure || ""}\t`
-      row += `${entry.avDryBulbTemperature || ""}\t`
-      row += `${entry.avWetBulbTemperature || ""}\t`
-      row += `${entry.maxTemperature || ""}\t`
-      row += `${entry.minTemperature || ""}\t`
-      row += `${entry.totalPrecipitation || ""}\t`
-      row += `${entry.avDewPointTemperature || ""}\t`
-      row += `${entry.avRelativeHumidity || ""}\t`
-      row += `${entry.windSpeed || ""}\t`
-      row += `${entry.windDirectionCode || ""}\t`
-      row += `${entry.maxWindSpeed || ""}\t`
-      row += `${entry.maxWindDirection || ""}\t`
-      row += `${entry.avTotalCloud || ""}\t`
-      row += `${entry.lowestVisibility || ""}\t`
-      row += `${entry.totalRainDuration || ""}\n`
-      txtContent += row
-    })
+DAILY SUMMARY VALUES:
+${"=".repeat(60)}
+`;
 
-    // Create download link
-    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `daily_summary_${headerInfo.year}${headerInfo.month}${headerInfo.day}.txt`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+    // Add data records
+    currentData.forEach((entry, index) => {
+      const observingTime = entry.ObservingTime?.utcTime
+        ? new Date(entry.ObservingTime.utcTime)
+        : new Date();
+      const dateStr = observingTime.toLocaleDateString();
+
+      txtContent += `\nRecord ${index + 1} (Date: ${dateStr}):\n`;
+      txtContent += `${"-".repeat(30)}\n`;
+
+      // Format each field with label and value
+      txtContent += `Station${" ".repeat(13)} ---> ${entry.ObservingTime?.station?.name || "--"}\n`;
+      txtContent += `Av Station Pressure${" ".repeat(2)} ---> ${entry.avStationPressure || "--"} hPa\n`;
+      txtContent += `Av Sea-Level Press${" ".repeat(3)} ---> ${entry.avSeaLevelPressure || "--"} hPa\n`;
+      txtContent += `Av Dry-Bulb Temp${" ".repeat(4)} ---> ${entry.avDryBulbTemperature || "--"} °C\n`;
+      txtContent += `Av Wet Bulb Temp${" ".repeat(4)} ---> ${entry.avWetBulbTemperature || "--"} °C\n`;
+      txtContent += `Max Temperature${" ".repeat(5)} ---> ${entry.maxTemperature || "--"} °C\n`;
+      txtContent += `Min Temperature${" ".repeat(5)} ---> ${entry.minTemperature || "--"} °C\n`;
+      txtContent += `Total Precipitation${" ".repeat(1)} ---> ${entry.totalPrecipitation || "--"} mm\n`;
+      txtContent += `Av Dew Point Temp${" ".repeat(3)} ---> ${entry.avDewPointTemperature || "--"} °C\n`;
+      txtContent += `Av Relative Humid${" ".repeat(3)} ---> ${entry.avRelativeHumidity || "--"} %\n`;
+      txtContent += `Wind Speed${" ".repeat(10)} ---> ${entry.windSpeed || "--"} knots\n`;
+      txtContent += `Wind Direction${" ".repeat(7)} ---> ${entry.windDirectionCode || "--"}°\n`;
+      txtContent += `Max Wind Speed${" ".repeat(6)} ---> ${entry.maxWindSpeed || "--"} knots\n`;
+      txtContent += `Max Wind Direction${" ".repeat(3)} ---> ${entry.maxWindDirection || "--"}°\n`;
+      txtContent += `Av Total Cloud${" ".repeat(6)} ---> ${entry.avTotalCloud || "--"} oktas\n`;
+      txtContent += `Lowest Visibility${" ".repeat(4)} ---> ${entry.lowestVisibility || "--"} km\n`;
+      txtContent += `Total Rain Duration${" ".repeat(2)} ---> ${entry.totalRainDuration || "--"} hours\n`;
+    });
+
+    // Add footer
+    txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`;
+
+    // Create and download file
+    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `daily_summary_${headerInfo.stationNo}_${startDate}_to_${endDate}_${currentDate}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="space-y-6 print:space-y-0">
@@ -560,7 +681,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 max={endDate}
                 className="text-xs sm:text-sm p-2 border border-slate-300 focus:ring-purple-500 focus:ring-2 rounded w-full"
               />
-              <span className="text-sm text-slate-600 whitespace-nowrap px-1">to</span>
+              <span className="text-sm text-slate-600 whitespace-nowrap px-1">
+                to
+              </span>
               <input
                 type="date"
                 value={endDate}
@@ -595,7 +718,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 disabled={!currentData || currentData.length === 0}
               >
                 <Download className="h-4 w-4" />
-                <span className="whitespace-nowrap text-xs sm:text-sm">Export CSV</span>
+                <span className="whitespace-nowrap text-xs sm:text-sm">
+                  Export CSV
+                </span>
               </Button>
               <Button
                 variant="outline"
@@ -605,7 +730,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 disabled={!currentData || currentData.length === 0}
               >
                 <Download className="h-4 w-4" />
-                <span className="whitespace-nowrap text-xs sm:text-sm">Export TXT</span>
+                <span className="whitespace-nowrap text-xs sm:text-sm">
+                  Export TXT
+                </span>
               </Button>
             </div>
           )}
@@ -642,18 +769,26 @@ const DailySummaryTable = forwardRef((props, ref) => {
         </div>
       </div>
 
-      {dateError && <div className="text-red-500 text-sm px-4 print:hidden">{dateError}</div>}
+      {dateError && (
+        <div className="text-red-500 text-sm px-4 print:hidden">
+          {dateError}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-          <span className="ml-3 text-lg text-gray-700">Loading daily summary data...</span>
+          <span className="ml-3 text-lg text-gray-700">
+            Loading daily summary data...
+          </span>
         </div>
       ) : !currentData || currentData.length === 0 ? (
         <div className="flex justify-center items-center h-64 bg-blue-50/50 rounded-lg border-2 border-dashed border-blue-200">
           <div className="text-center p-8">
             <LineChart className="mx-auto mb-5 text-blue-400" size={56} />
-            <h3 className="text-xl font-semibold text-gray-800 mb-3">No Data Available</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-3">
+              No Data Available
+            </h3>
             <p className="text-lg text-gray-600 mb-5">
               There is no daily summary data available for the selected filters.
             </p>
@@ -673,7 +808,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
             <div className="text-center border-b-2 border-blue-200 bg-gradient-to-b from-blue-50 to-white py-6 print:py-3 rounded-t-lg">
               <div className="flex flex-wrap justify-center gap-10 print:gap-6 max-w-5xl mx-auto">
                 <div className="text-left">
-                  <div className="font-bold text-base mb-2 text-gray-600">DATA TYPE</div>
+                  <div className="font-bold text-base mb-2 text-gray-600">
+                    DATA TYPE
+                  </div>
                   <div className="flex">
                     {headerInfo.dataType.split("").map((char, i) => (
                       <div
@@ -687,7 +824,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 </div>
 
                 <div className="text-left">
-                  <div className="font-bold text-base mb-2 text-gray-600">STATION NO.</div>
+                  <div className="font-bold text-base mb-2 text-gray-600">
+                    STATION NO.
+                  </div>
                   <div className="flex">
                     {headerInfo.stationNo.split("").map((char, i) => (
                       <div
@@ -701,7 +840,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 </div>
 
                 <div className="text-left">
-                  <div className="font-bold text-base mb-2 text-gray-600">YEAR</div>
+                  <div className="font-bold text-base mb-2 text-gray-600">
+                    YEAR
+                  </div>
                   <div className="flex">
                     {headerInfo.year.split("").map((char, i) => (
                       <div
@@ -715,7 +856,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 </div>
 
                 <div className="text-left">
-                  <div className="font-bold text-base mb-2 text-gray-600">MONTH</div>
+                  <div className="font-bold text-base mb-2 text-gray-600">
+                    MONTH
+                  </div>
                   <div className="flex">
                     {headerInfo.month.split("").map((char, i) => (
                       <div
@@ -729,7 +872,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
                 </div>
 
                 <div className="text-left">
-                  <div className="font-bold text-base mb-2 text-gray-600">DAY</div>
+                  <div className="font-bold text-base mb-2 text-gray-600">
+                    DAY
+                  </div>
                   <div className="flex">
                     {headerInfo.day.split("").map((char, i) => (
                       <div
@@ -749,36 +894,79 @@ const DailySummaryTable = forwardRef((props, ref) => {
             <table className="w-full border-collapse min-w-[1800px] text-base text-gray-800">
               <thead className="bg-gradient-to-b from-blue-600 to-blue-700 text-sm font-bold uppercase text-center text-white print:bg-blue-700">
                 <tr>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Date</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Station</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Station Pressure (hPa)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Sea-Level Pressure (hPa)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Dry-Bulb Temp (°C)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Wet Bulb Temp (°C)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Max Temperature (°C)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Min Temperature (°C)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Total Precipitation (mm)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Dew Point Temp (°C)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Relative Humidity (%)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Wind Speed (m/s)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Wind Direction</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Max Wind Speed (m/s)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Max Wind Direction</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Av. Total Cloud (octas)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Lowest Visibility (km)</th>
-                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">Total Rain Duration (H-M)</th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Date
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Station
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Station Pressure (hPa)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Sea-Level Pressure (hPa)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Dry-Bulb Temp (°C)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Wet Bulb Temp (°C)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Max Temperature (°C)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Min Temperature (°C)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Total Precipitation (mm)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Dew Point Temp (°C)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Relative Humidity (%)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Wind Speed (m/s)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Wind Direction
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Max Wind Speed (m/s)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Max Wind Direction
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Av. Total Cloud (octas)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Lowest Visibility (km)
+                  </th>
+                  <th className="border border-blue-300 px-4 py-3 whitespace-nowrap">
+                    Total Rain Duration (H-M)
+                  </th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-blue-100 text-center font-mono">
                 {currentData && currentData.length > 0 ? (
                   currentData.map((entry, index) => {
-                    const observingTime = entry.ObservingTime?.utcTime ? new Date(entry.ObservingTime.utcTime) : null
+                    const observingTime = entry.ObservingTime?.utcTime
+                      ? new Date(entry.ObservingTime.utcTime)
+                      : null;
 
                     return (
-                      <tr key={index} className="bg-white hover:bg-blue-50 print:hover:bg-white">
+                      <tr
+                        key={index}
+                        className="bg-white hover:bg-blue-50 print:hover:bg-white"
+                      >
                         <td className="border border-blue-200 px-4 py-3 whitespace-nowrap font-semibold text-blue-700">
-                          {observingTime ? observingTime.toLocaleDateString() : "--"}
+                          {observingTime
+                            ? observingTime.toLocaleDateString()
+                            : "--"}
                         </td>
                         <td className="border border-blue-200 px-4 py-3 whitespace-nowrap">
                           {getStationNameById(entry.ObservingTime.station.name)}
@@ -832,7 +1020,7 @@ const DailySummaryTable = forwardRef((props, ref) => {
                           {formatValue(entry.totalRainDuration)}
                         </td>
                       </tr>
-                    )
+                    );
                   })
                 ) : (
                   <tr>
@@ -846,7 +1034,8 @@ const DailySummaryTable = forwardRef((props, ref) => {
 
             {/* Optional footer */}
             <div className="text-right text-sm text-blue-600 mt-2 pr-4 pb-2 print:hidden">
-              Generated: {new Date().toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
+              Generated:{" "}
+              {new Date().toLocaleString("en-GB", { timeZone: "Asia/Dhaka" })}
             </div>
           </div>
         </div>
@@ -864,11 +1053,17 @@ const DailySummaryTable = forwardRef((props, ref) => {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-sky-100 text-sky-800 hover:bg-sky-200">
+          <Badge
+            variant="outline"
+            className="bg-sky-100 text-sky-800 hover:bg-sky-200"
+          >
             {currentData.length} record(s)
           </Badge>
           {stationFilter !== "all" && (
-            <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            <Badge
+              variant="outline"
+              className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+            >
               Station: {getStationNameById(stationFilter)}
             </Badge>
           )}
@@ -879,29 +1074,42 @@ const DailySummaryTable = forwardRef((props, ref) => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="w-[50vw] !max-w-[90vw] rounded-xl border-0 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-indigo-800">Edit Daily Summary Data</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-indigo-800">
+              Edit Daily Summary Data
+            </DialogTitle>
             <DialogDescription className="text-slate-600">
-              Editing record from {selectedRecord?.ObservingTime?.station?.name || "Unknown Station"}{" "}
-              {selectedRecord?.createdAt ? format(new Date(selectedRecord.createdAt), "MMMM d, yyyy") : "Unknown Date"}
+              Editing record from{" "}
+              {selectedRecord?.ObservingTime?.station?.name ||
+                "Unknown Station"}{" "}
+              {selectedRecord?.createdAt
+                ? format(new Date(selectedRecord.createdAt), "MMMM d, yyyy")
+                : "Unknown Date"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[65vh] overflow-y-auto pr-2">
             {formFields.map((field) => {
-              const validation = fieldValidations[field.id as keyof typeof fieldValidations]
-              const error = fieldErrors[field.id]
-              const hasError = !!error
-              const value = editFormData[field.id] || ""
+              const validation =
+                fieldValidations[field.id as keyof typeof fieldValidations];
+              const error = fieldErrors[field.id];
+              const hasError = !!error;
+              const value = editFormData[field.id] || "";
 
               // Ensure the value is always an integer (remove any decimal points)
-              const displayValue = typeof value === 'number' ? Math.floor(value).toString() : value.replace(/\./g, '')
+              const displayValue =
+                typeof value === "number"
+                  ? Math.floor(value).toString()
+                  : value.replace(/\./g, "");
 
               return (
                 <div
                   key={field.id}
                   className={`space-y-1 p-3 rounded-lg ${field.bg} border ${hasError ? "border-red-300" : "border-white"} shadow-sm`}
                 >
-                  <Label htmlFor={field.id} className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor={field.id}
+                    className="text-sm font-medium text-gray-700"
+                  >
                     {field.label}
                   </Label>
                   <Input
@@ -909,29 +1117,35 @@ const DailySummaryTable = forwardRef((props, ref) => {
                     value={displayValue}
                     onChange={(e) => {
                       // Remove any non-digit characters and decimal points
-                      const numericValue = e.target.value.replace(/[^0-9]/g, "")
+                      const numericValue = e.target.value.replace(
+                        /[^0-9]/g,
+                        ""
+                      );
                       // Enforce maximum length
-                      const truncatedValue = numericValue.slice(0, validation.length)
+                      const truncatedValue = numericValue.slice(
+                        0,
+                        validation.length
+                      );
 
                       setEditFormData((prev: any) => ({
                         ...prev,
                         [field.id]: truncatedValue,
-                      }))
+                      }));
 
                       // Validate the input
-                      let error = ""
+                      let error = "";
                       if (truncatedValue.length === 0) {
-                        error = `This field is required`
+                        error = `This field is required`;
                       } else if (truncatedValue.length < validation.length) {
-                        error = `Must be exactly ${validation.length} digits (currently ${truncatedValue.length})`
+                        error = `Must be exactly ${validation.length} digits (currently ${truncatedValue.length})`;
                       } else if (truncatedValue.length > validation.length) {
-                        error = `Cannot exceed ${validation.length} digits`
+                        error = `Cannot exceed ${validation.length} digits`;
                       }
 
                       setFieldErrors((prev) => ({
                         ...prev,
                         [field.id]: error,
-                      }))
+                      }));
                     }}
                     className={`w-full bg-white ${hasError ? "border-red-400 focus:border-red-500 focus:ring-red-200" : "border-gray-300 focus:border-indigo-400 focus:ring-indigo-200"} focus:ring-2`}
                     maxLength={validation.length}
@@ -940,14 +1154,17 @@ const DailySummaryTable = forwardRef((props, ref) => {
                     placeholder={`${"0".repeat(validation.length)}`}
                   />
                   {hasError ? (
-                    <div className="text-xs text-red-600 mt-1 font-medium">{error}</div>
+                    <div className="text-xs text-red-600 mt-1 font-medium">
+                      {error}
+                    </div>
                   ) : (
                     <div className="text-xs text-gray-500 mt-1">
-                      Required length: exactly {validation.length} digit{validation.length > 1 ? "s" : ""}
+                      Required length: exactly {validation.length} digit
+                      {validation.length > 1 ? "s" : ""}
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
           </div>
 
@@ -961,7 +1178,10 @@ const DailySummaryTable = forwardRef((props, ref) => {
             </Button>
             <Button
               onClick={handleSaveEdit}
-              disabled={isSaving || Object.keys(fieldErrors).some((key) => fieldErrors[key])}
+              disabled={
+                isSaving ||
+                Object.keys(fieldErrors).some((key) => fieldErrors[key])
+              }
               className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (
@@ -978,7 +1198,10 @@ const DailySummaryTable = forwardRef((props, ref) => {
       </Dialog>
 
       {/* Permission Denied Dialog */}
-      <Dialog open={isPermissionDeniedOpen} onOpenChange={setIsPermissionDeniedOpen}>
+      <Dialog
+        open={isPermissionDeniedOpen}
+        onOpenChange={setIsPermissionDeniedOpen}
+      >
         <DialogContent className="max-w-md rounded-xl border-0 bg-white p-6 shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
@@ -987,7 +1210,10 @@ const DailySummaryTable = forwardRef((props, ref) => {
             </DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p className="text-slate-700">You don't have permission to edit this record. This could be because:</p>
+            <p className="text-slate-700">
+              You don't have permission to edit this record. This could be
+              because:
+            </p>
             <ul className="mt-2 list-disc pl-5 text-sm text-slate-600 space-y-1">
               <li>The record is too old to edit</li>
               <li>The record belongs to a different station</li>
@@ -1031,9 +1257,9 @@ const DailySummaryTable = forwardRef((props, ref) => {
         }
       `}</style>
     </div>
-  )
-})
+  );
+});
 
-DailySummaryTable.displayName = "DailySummaryTable"
+DailySummaryTable.displayName = "DailySummaryTable";
 
-export default DailySummaryTable
+export default DailySummaryTable;

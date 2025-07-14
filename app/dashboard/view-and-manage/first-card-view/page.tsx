@@ -648,94 +648,90 @@ const FirstCardTable = forwardRef(
         return;
       }
 
+      const currentDate = new Date().toISOString().split("T")[0];
+      const currentTime = new Date().toLocaleTimeString();
+
       // Create TXT header
-      let txtContent = `Meteorological Data Report\n`;
-      txtContent += `Date Range: ${startDate} to ${endDate}\n`;
-      txtContent += `Station: ${user?.station?.name || "All Stations"}\n`;
-      txtContent += `Generated: ${new Date().toLocaleString()}\n\n`;
+      let txtContent = `METEOROLOGICAL DATA REPORT
+${"=".repeat(60)}
 
-      // Create column headers
-      const headers = [
-        "Time (GMT)", "Indicator", "Date", "Station",
-        "Attached Thermometer", "Bar As Read", "Corrected for Index",
-        "Height Diff", "Station Level Pressure", "Sea Level Reduction",
-        "Sea Level Pressure", "Afternoon Reading", "24h Pressure Change",
-        "Dry Bulb", "Wet Bulb", "MAX/MIN Temp", "Dry Bulb Corrected",
-        "Wet Bulb Corrected", "MAX/MIN Corrected", "Dew Point",
-        "Relative Humid", "Squall Force", "Squall Direction", "Squall Time",
-        "Visibility", "Misc Meteors", "Past W1", "Past W2", "Present WW",
-        "C2 Indicator"
-      ];
+REPORT INFORMATION:
+  Date Range: ${startDate} to ${endDate}
+  Station: ${user?.station?.name || "All Stations"}
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${flattenedData.length}
 
-      // Format headers as fixed-width columns
-      txtContent += headers.map(h => h.padEnd(20)).join("") + "\n";
-      txtContent += "-".repeat(headers.length * 20) + "\n";
+DATA VALUES:
+${"=".repeat(60)}
+`;
 
-      // Create TXT rows with fixed-width formatting
-      const rows = flattenedData.map((record) => {
-        const observingTime = data.find(ot => ot.id === record.observingTimeId);
-        const rowData = [
-          utcToHour(observingTime?.utcTime || "").padEnd(20),
-          (record.subIndicator || "--").padEnd(20),
-          (observingTime?.utcTime
-            ? format(new Date(observingTime.utcTime), "yyyy-MM-dd")
-            : "--").padEnd(20),
-          ((observingTime?.station?.name || "--") +
-            " " +
-            (observingTime?.station?.stationId || "--")).padEnd(20),
-          (record.alteredThermometer || "--").padEnd(20),
-          (record.barAsRead || "--").padEnd(20),
-          (record.correctedForIndex || "--").padEnd(20),
-          (record.heightDifference || "--").padEnd(20),
-          (record.stationLevelPressure || "--").padEnd(20),
-          (record.seaLevelReduction || "--").padEnd(20),
-          (record.correctedSeaLevelPressure || "--").padEnd(20),
-          (record.afternoonReading || "--").padEnd(20),
-          (record.pressureChange24h || "--").padEnd(20),
-          (record.dryBulbAsRead || "--").padEnd(20),
-          (record.wetBulbAsRead || "--").padEnd(20),
-          (record.maxMinTempAsRead || "--").padEnd(20),
-          (record.dryBulbCorrected || "--").padEnd(20),
-          (record.wetBulbCorrected || "--").padEnd(20),
-          (record.maxMinTempCorrected || "--").padEnd(20),
-          (record.Td || "--").padEnd(20),
-          (record.relativeHumidity || "--").padEnd(20),
-          (record.squallForce || "--").padEnd(20),
-          (record.squallDirection || "--").padEnd(20),
-          (record.squallTime || "--").padEnd(20),
-          (record.horizontalVisibility
-            ? (Number.parseInt(record.horizontalVisibility) % 10 === 0
-              ? (Number.parseInt(record.horizontalVisibility) / 10).toString()
-              : (Number.parseInt(record.horizontalVisibility) / 10).toFixed(1)
-            ).padEnd(20)
-            : "--".padEnd(20)),
-          (record.miscMeteors || "--").padEnd(20),
-          (record.pastWeatherW1 || "--").padEnd(20),
-          (record.pastWeatherW2 || "--").padEnd(20),
-          (record.presentWeatherWW || "--").padEnd(20),
-          (record.c2Indicator || "--").padEnd(20)
-        ];
-        return rowData.join("");
+      // Add data records
+      flattenedData.forEach((record, index) => {
+        const observingTime = data.find(
+          (ot) => ot.id === record.observingTimeId
+        );
+
+        txtContent += `\nRecord ${index + 1}:\n`;
+        txtContent += `${"-".repeat(30)}\n`;
+
+        // Format each field with label and value
+        txtContent += `Time (GMT)${" ".repeat(10)} ---> ${utcToHour(observingTime?.utcTime || "--")}\n`;
+        txtContent += `Indicator${" ".repeat(12)} ---> ${record.subIndicator || "--"}\n`;
+        txtContent += `Date${" ".repeat(16)} ---> ${observingTime?.utcTime ? format(new Date(observingTime.utcTime), "yyyy-MM-dd") : "--"}\n`;
+        txtContent += `Station${" ".repeat(13)} ---> ${(observingTime?.station?.name || "--") + " " + (observingTime?.station?.stationId || "--")}\n`;
+        txtContent += `Attached Thermometer ---> ${record.alteredThermometer || "--"}\n`;
+        txtContent += `Bar As Read${" ".repeat(9)} ---> ${record.barAsRead || "--"}\n`;
+        txtContent += `Corrected for Index ---> ${record.correctedForIndex || "--"}\n`;
+        txtContent += `Height Diff${" ".repeat(9)} ---> ${record.heightDifference || "--"}\n`;
+        txtContent += `Station Level Press --> ${record.stationLevelPressure || "--"}\n`;
+        txtContent += `Sea Level Reduction --> ${record.seaLevelReduction || "--"}\n`;
+        txtContent += `Sea Level Pressure${" ".repeat(3)} ---> ${record.correctedSeaLevelPressure || "--"}\n`;
+        txtContent += `Afternoon Reading${" ".repeat(3)} ---> ${record.afternoonReading || "--"}\n`;
+        txtContent += `24h Pressure Change --> ${record.pressureChange24h || "--"}\n`;
+        txtContent += `Dry Bulb${" ".repeat(13)} ---> ${record.dryBulbAsRead || "--"}\n`;
+        txtContent += `Wet Bulb${" ".repeat(13)} ---> ${record.wetBulbAsRead || "--"}\n`;
+        txtContent += `MAX/MIN Temp${" ".repeat(7)} ---> ${record.maxMinTempAsRead || "--"}\n`;
+        txtContent += `Dry Bulb Corrected --> ${record.dryBulbCorrected || "--"}\n`;
+        txtContent += `Wet Bulb Corrected --> ${record.wetBulbCorrected || "--"}\n`;
+        txtContent += `MAX/MIN Corrected --> ${record.maxMinTempCorrected || "--"}\n`;
+        txtContent += `Dew Point${" ".repeat(11)} ---> ${record.Td || "--"}\n`;
+        txtContent += `Relative Humid${" ".repeat(6)} ---> ${record.relativeHumidity || "--"}\n`;
+        txtContent += `Squall Force${" ".repeat(8)} ---> ${record.squallForce || "--"}\n`;
+        txtContent += `Squall Direction${" ".repeat(5)} ---> ${record.squallDirection || "--"}\n`;
+        txtContent += `Squall Time${" ".repeat(9)} ---> ${record.squallTime || "--"}\n`;
+
+        const visibilityValue = record.horizontalVisibility
+          ? Number.parseInt(record.horizontalVisibility) % 10 === 0
+            ? Number.parseInt(record.horizontalVisibility) / 10
+            : (Number.parseInt(record.horizontalVisibility) / 10).toFixed(1)
+          : "--";
+        txtContent += `Visibility${" ".repeat(9)} ---> ${visibilityValue}\n`;
+
+        txtContent += `Misc Meteors${" ".repeat(7)} ---> ${record.miscMeteors || "--"}\n`;
+        txtContent += `Past W1${" ".repeat(13)} ---> ${record.pastWeatherW1 || "--"}\n`;
+        txtContent += `Past W2${" ".repeat(13)} ---> ${record.pastWeatherW2 || "--"}\n`;
+        txtContent += `Present WW${" ".repeat(9)} ---> ${record.presentWeatherWW || "--"}\n`;
       });
 
-      // Combine all content
-      txtContent += rows.join("\n");
+      // Add footer
+      txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`;
 
-      // Create download link
-      const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+      // Create and download file
+      const blob = new Blob([txtContent], {
+        type: "text/plain;charset=utf-8;",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute(
-        "download",
-        `meteorological_data_${startDate}_to_${endDate}.txt`
-      );
+      link.download = `meteorological_data_${startDate}_to_${endDate}_${currentDate}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("TXT export started");
+      toast.success("Data exported to TXT successfully");
     };
 
     const fetchData = async () => {

@@ -360,173 +360,128 @@ const MargeTable = forwardRef(({ refreshTrigger = 0 }: MargeTableProps, ref) => 
 
   // Add this function alongside your exportToCSV function
   const exportToTXT = () => {
-    if (mergedData.length === 0) {
-      toast.error("No data to export")
-      return
-    }
-
-    // Create TXT content
-    const headers = [
-      "Time (GMT)",
-      "Indicator",
-      "Date",
-      "Station Name & ID",
-      "Station Name",
-      "Attached Thermometer (°C)",
-      "Bar As Read (hPa)",
-      "Corrected for Index",
-      "Height Difference Correction (hPa)",
-      "Station Level Pressure (QFE)",
-      "Sea Level Reduction",
-      "Sea Level Pressure (QNH)",
-      "Afternoon Reading",
-      "24-Hour Pressure Change",
-      "Dry Bulb As Read (°C)",
-      "Wet Bulb As Read (°C)",
-      "MAX/MIN Temp As Read (°C)",
-      "Dry Bulb Corrected (°C)",
-      "Wet Bulb Corrected (°C)",
-      "MAX/MIN Temp Corrected (°C)",
-      "Dew Point Temperature (°C)",
-      "Relative Humidity (%)",
-      "Squall Force (KTS)",
-      "Squall Direction (°)",
-      "Squall Time",
-      "Horizontal Visibility (km)",
-      "Misc Meteors (Code)",
-      "Past Weather (W₁)",
-      "Past Weather (W₂)",
-      "Present Weather (ww)",
-      "C2 Indicator",
-      "Low Cloud Form",
-      "Low Cloud Amount",
-      "Low Cloud Direction",
-      "Low Cloud Height",
-      "Medium Cloud Form",
-      "Medium Cloud Amount",
-      "Medium Cloud Direction",
-      "Medium Cloud Height",
-      "High Cloud Form",
-      "High Cloud Amount",
-      "High Cloud Direction",
-      "Total Cloud Amount",
-      "Layer1 Form",
-      "Layer1 Amount",
-      "Layer1 Height",
-      "Layer2 Form",
-      "Layer2 Amount",
-      "Layer2 Height",
-      "Layer3 Form",
-      "Layer3 Amount",
-      "Layer3 Height",
-      "Layer4 Form",
-      "Layer4 Amount",
-      "Layer4 Height",
-      "Rainfall Time Start",
-      "Rainfall Time End",
-      "Rainfall Since Previous",
-      "Rainfall During Previous",
-      "Rainfall Last 24 Hours",
-      "Wind First Anemometer",
-      "Wind Second Anemometer",
-      "Wind Speed",
-      "Wind Direction",
-      "Observer Initial",
-    ].join("\t")
-
-    // Create TXT rows
-    const rows = mergedData.map((record) => {
-      const metEntry = record.meteorologicalEntry
-      const weatherObs = record.weatherObservation
-
-      return [
-        // First card data
-        utcToHour(record.utcTime || ""),
-        metEntry?.subIndicator || "--",
-        record.utcTime ? format(new Date(record.utcTime), "yyyy-MM-dd") : "--",
-        record.station?.name + " " + record.station?.stationId || "--",
-        record.station?.name || "--",
-        metEntry?.alteredThermometer || "--",
-        metEntry?.barAsRead || "--",
-        metEntry?.correctedForIndex || "--",
-        metEntry?.heightDifference || "--",
-        metEntry?.stationLevelPressure || "--",
-        metEntry?.seaLevelReduction || "--",
-        metEntry?.correctedSeaLevelPressure || "--",
-        metEntry?.afternoonReading || "--",
-        metEntry?.pressureChange24h || "--",
-        metEntry?.dryBulbAsRead || "--",
-        metEntry?.wetBulbAsRead || "--",
-        metEntry?.maxMinTempAsRead || "--",
-        metEntry?.dryBulbCorrected || "--",
-        metEntry?.wetBulbCorrected || "--",
-        metEntry?.maxMinTempCorrected || "--",
-        metEntry?.Td || "--",
-        metEntry?.relativeHumidity || "--",
-        metEntry?.squallForce || "--",
-        metEntry?.squallDirection || "--",
-        metEntry?.squallTime || "--",
-        metEntry?.horizontalVisibility || "--",
-        metEntry?.miscMeteors || "--",
-        metEntry?.pastWeatherW1 || "--",
-        metEntry?.pastWeatherW2 || "--",
-        metEntry?.presentWeatherWW || "--",
-        // Second card data
-        weatherObs?.cardIndicator || "--",
-        weatherObs?.lowCloudForm || "--",
-        weatherObs?.lowCloudAmount || "--",
-        weatherObs?.lowCloudDirection || "--",
-        weatherObs?.lowCloudHeight || "--",
-        weatherObs?.mediumCloudForm || "--",
-        weatherObs?.mediumCloudAmount || "--",
-        weatherObs?.mediumCloudDirection || "--",
-        weatherObs?.mediumCloudHeight || "--",
-        weatherObs?.highCloudForm || "--",
-        weatherObs?.highCloudAmount || "--",
-        weatherObs?.highCloudDirection || "--",
-        weatherObs?.totalCloudAmount || "--",
-        weatherObs?.layer1Form || "--",
-        weatherObs?.layer1Amount || "--",
-        weatherObs?.layer1Height || "--",
-        weatherObs?.layer2Form || "--",
-        weatherObs?.layer2Amount || "--",
-        weatherObs?.layer2Height || "--",
-        weatherObs?.layer3Form || "--",
-        weatherObs?.layer3Amount || "--",
-        weatherObs?.layer3Height || "--",
-        weatherObs?.layer4Form || "--",
-        weatherObs?.layer4Amount || "--",
-        weatherObs?.layer4Height || "--",
-        weatherObs?.rainfallTimeStart ? moment(weatherObs.rainfallTimeStart).format("MMMM Do YYYY, h:mm") : "--",
-        weatherObs?.rainfallTimeEnd ? moment(weatherObs.rainfallTimeEnd).format("MMMM Do YYYY, h:mm") : "--",
-        weatherObs?.rainfallSincePrevious || "--",
-        weatherObs?.rainfallDuringPrevious || "--",
-        weatherObs?.rainfallLast24Hours || "--",
-        weatherObs?.windFirstAnemometer || "--",
-        weatherObs?.windSecondAnemometer || "--",
-        weatherObs?.windSpeed || "--",
-        weatherObs?.windDirection || "--",
-        weatherObs?.observerInitial || "--",
-      ].join("\t")
-    })
-
-    // Combine header and rows
-    const txtContent = [headers, ...rows].join("\n")
-
-    // Create download link
-    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute("download", `merged_meteorological_data_${startDate}_to_${endDate}.txt`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    toast.success("TXT export started")
+  if (mergedData.length === 0) {
+    toast.error("No data to export");
+    return;
   }
 
+  const currentDate = new Date().toISOString().split("T")[0];
+  const currentTime = new Date().toLocaleTimeString();
+
+  // Create TXT header
+  let txtContent = `MERGED METEOROLOGICAL DATA REPORT
+${"=".repeat(60)}
+
+REPORT INFORMATION:
+  Date Range: ${startDate} to ${endDate}
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${mergedData.length}
+
+DATA VALUES:
+${"=".repeat(60)}
+`;
+
+  // Add data records
+  mergedData.forEach((record, index) => {
+    const metEntry = record.meteorologicalEntry || {};
+    const weatherObs = record.weatherObservation || {};
+    
+    txtContent += `\nRecord ${index + 1}:\n`;
+    txtContent += `${"-".repeat(30)}\n`;
+    
+    // Basic Information
+    txtContent += `Time (GMT)${" ".repeat(10)} ---> ${utcToHour(record.utcTime) || "--"}\n`;
+    txtContent += `Indicator${" ".repeat(12)} ---> ${metEntry.subIndicator || "--"}\n`;
+    txtContent += `Date${" ".repeat(16)} ---> ${record.utcTime ? format(new Date(record.utcTime), "yyyy-MM-dd") : "--"}\n`;
+    txtContent += `Station Name & ID${" ".repeat(4)} ---> ${record.station?.name + " " + record.station?.stationId || "--"}\n`;
+    txtContent += `Station Name${" ".repeat(9)} ---> ${record.station?.name || "--"}\n`;
+
+    // Meteorological Data
+    txtContent += `\nMETEOROLOGICAL DATA:\n`;
+    txtContent += `${"-".repeat(30)}\n`;
+    txtContent += `Attached Thermometer (°C) ---> ${metEntry.alteredThermometer || "--"}\n`;
+    txtContent += `Bar As Read (hPa)${" ".repeat(6)} ---> ${metEntry.barAsRead || "--"}\n`;
+    txtContent += `Corrected for Index${" ".repeat(4)} ---> ${metEntry.correctedForIndex || "--"}\n`;
+    txtContent += `Height Difference (hPa)${" ".repeat(1)} ---> ${metEntry.heightDifference || "--"}\n`;
+    txtContent += `Station Level Pressure ---> ${metEntry.stationLevelPressure || "--"}\n`;
+    txtContent += `Sea Level Reduction${" ".repeat(3)} ---> ${metEntry.seaLevelReduction || "--"}\n`;
+    txtContent += `Sea Level Pressure${" ".repeat(4)} ---> ${metEntry.correctedSeaLevelPressure || "--"}\n`;
+    txtContent += `Afternoon Reading${" ".repeat(4)} ---> ${metEntry.afternoonReading || "--"}\n`;
+    txtContent += `24-Hour Pressure Change --> ${metEntry.pressureChange24h || "--"}\n`;
+    txtContent += `Dry Bulb As Read (°C)${" ".repeat(2)} ---> ${metEntry.dryBulbAsRead || "--"}\n`;
+    txtContent += `Wet Bulb As Read (°C)${" ".repeat(2)} ---> ${metEntry.wetBulbAsRead || "--"}\n`;
+    txtContent += `MAX/MIN Temp As Read${" ".repeat(2)} ---> ${metEntry.maxMinTempAsRead || "--"}\n`;
+    txtContent += `Dry Bulb Corrected (°C) --> ${metEntry.dryBulbCorrected || "--"}\n`;
+    txtContent += `Wet Bulb Corrected (°C) --> ${metEntry.wetBulbCorrected || "--"}\n`;
+    txtContent += `MAX/MIN Temp Corrected --> ${metEntry.maxMinTempCorrected || "--"}\n`;
+    txtContent += `Dew Point Temperature${" ".repeat(2)} ---> ${metEntry.Td || "--"}\n`;
+    txtContent += `Relative Humidity (%)${" ".repeat(2)} ---> ${metEntry.relativeHumidity || "--"}\n`;
+    txtContent += `Squall Force (KTS)${" ".repeat(4)} ---> ${metEntry.squallForce || "--"}\n`;
+    txtContent += `Squall Direction (°)${" ".repeat(3)} ---> ${metEntry.squallDirection || "--"}\n`;
+    txtContent += `Squall Time${" ".repeat(10)} ---> ${metEntry.squallTime || "--"}\n`;
+    txtContent += `Horizontal Visibility${" ".repeat(2)} ---> ${metEntry.horizontalVisibility || "--"}\n`;
+    txtContent += `Misc Meteors (Code)${" ".repeat(3)} ---> ${metEntry.miscMeteors || "--"}\n`;
+    txtContent += `Past Weather (W₁)${" ".repeat(5)} ---> ${metEntry.pastWeatherW1 || "--"}\n`;
+    txtContent += `Past Weather (W₂)${" ".repeat(5)} ---> ${metEntry.pastWeatherW2 || "--"}\n`;
+    txtContent += `Present Weather (ww)${" ".repeat(3)} ---> ${metEntry.presentWeatherWW || "--"}\n`;
+
+    // Weather Observation Data
+    txtContent += `\nWEATHER OBSERVATION DATA:\n`;
+    txtContent += `${"-".repeat(30)}\n`;
+    txtContent += `Low Cloud Form${" ".repeat(7)} ---> ${weatherObs.lowCloudForm || "--"}\n`;
+    txtContent += `Low Cloud Amount${" ".repeat(5)} ---> ${weatherObs.lowCloudAmount || "--"}\n`;
+    txtContent += `Low Cloud Direction${" ".repeat(3)} ---> ${weatherObs.lowCloudDirection || "--"}\n`;
+    txtContent += `Low Cloud Height${" ".repeat(5)} ---> ${weatherObs.lowCloudHeight || "--"}\n`;
+    txtContent += `Medium Cloud Form${" ".repeat(4)} ---> ${weatherObs.mediumCloudForm || "--"}\n`;
+    txtContent += `Medium Cloud Amount${" ".repeat(2)} ---> ${weatherObs.mediumCloudAmount || "--"}\n`;
+    txtContent += `Medium Cloud Direction --> ${weatherObs.mediumCloudDirection || "--"}\n`;
+    txtContent += `Medium Cloud Height${" ".repeat(2)} ---> ${weatherObs.mediumCloudHeight || "--"}\n`;
+    txtContent += `High Cloud Form${" ".repeat(6)} ---> ${weatherObs.highCloudForm || "--"}\n`;
+    txtContent += `High Cloud Amount${" ".repeat(4)} ---> ${weatherObs.highCloudAmount || "--"}\n`;
+    txtContent += `High Cloud Direction${" ".repeat(3)} ---> ${weatherObs.highCloudDirection || "--"}\n`;
+    txtContent += `Total Cloud Amount${" ".repeat(3)} ---> ${weatherObs.totalCloudAmount || "--"}\n`;
+    txtContent += `Layer1 Form${" ".repeat(9)} ---> ${weatherObs.layer1Form || "--"}\n`;
+    txtContent += `Layer1 Amount${" ".repeat(7)} ---> ${weatherObs.layer1Amount || "--"}\n`;
+    txtContent += `Layer1 Height${" ".repeat(7)} ---> ${weatherObs.layer1Height || "--"}\n`;
+    txtContent += `Layer2 Form${" ".repeat(9)} ---> ${weatherObs.layer2Form || "--"}\n`;
+    txtContent += `Layer2 Amount${" ".repeat(7)} ---> ${weatherObs.layer2Amount || "--"}\n`;
+    txtContent += `Layer2 Height${" ".repeat(7)} ---> ${weatherObs.layer2Height || "--"}\n`;
+    txtContent += `Layer3 Form${" ".repeat(9)} ---> ${weatherObs.layer3Form || "--"}\n`;
+    txtContent += `Layer3 Amount${" ".repeat(7)} ---> ${weatherObs.layer3Amount || "--"}\n`;
+    txtContent += `Layer3 Height${" ".repeat(7)} ---> ${weatherObs.layer3Height || "--"}\n`;
+    txtContent += `Layer4 Form${" ".repeat(9)} ---> ${weatherObs.layer4Form || "--"}\n`;
+    txtContent += `Layer4 Amount${" ".repeat(7)} ---> ${weatherObs.layer4Amount || "--"}\n`;
+    txtContent += `Layer4 Height${" ".repeat(7)} ---> ${weatherObs.layer4Height || "--"}\n`;
+    txtContent += `Rainfall Time Start${" ".repeat(2)} ---> ${weatherObs.rainfallTimeStart ? moment(weatherObs.rainfallTimeStart).format("MMMM Do YYYY, h:mm") : "--"}\n`;
+    txtContent += `Rainfall Time End${" ".repeat(4)} ---> ${weatherObs.rainfallTimeEnd ? moment(weatherObs.rainfallTimeEnd).format("MMMM Do YYYY, h:mm") : "--"}\n`;
+    txtContent += `Rainfall Since Prev${" ".repeat(3)} ---> ${weatherObs.rainfallSincePrevious || "--"}\n`;
+    txtContent += `Rainfall During Prev${" ".repeat(2)} ---> ${weatherObs.rainfallDuringPrevious || "--"}\n`;
+    txtContent += `Rainfall Last 24h${" ".repeat(5)} ---> ${weatherObs.rainfallLast24Hours || "--"}\n`;
+    txtContent += `Wind First Anemometer${" ".repeat(1)} ---> ${weatherObs.windFirstAnemometer || "--"}\n`;
+    txtContent += `Wind Second Anemometer --> ${weatherObs.windSecondAnemometer || "--"}\n`;
+    txtContent += `Wind Speed${" ".repeat(10)} ---> ${weatherObs.windSpeed || "--"}\n`;
+    txtContent += `Wind Direction${" ".repeat(7)} ---> ${weatherObs.windDirection || "--"}\n`;
+    txtContent += `Observer Initial${" ".repeat(6)} ---> ${weatherObs.observerInitial || "--"}\n`;
+  });
+
+  // Add footer
+  txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`;
+
+  // Create and download file
+  const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `merged_meteorological_data_${startDate}_to_${endDate}_${currentDate}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  toast.success("Merged meteorological data exported to TXT successfully");
+};
   // Add this button next to your CSV export button in the JSX
   <Button
     variant="outline"

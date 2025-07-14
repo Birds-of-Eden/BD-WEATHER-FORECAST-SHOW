@@ -395,73 +395,69 @@ const SynopticCodeTable = forwardRef((props, ref) => {
 
   // Function to export data as TXT (SYNOP format)
   // Function to export data as TXT (SYNOP format)
-  const exportToTXT = () => {
-    if (!currentData || currentData.length === 0) return;
+   const exportToTXT = () => {
+    if (!currentData || currentData.length === 0) return
+    const currentDate = new Date().toISOString().split("T")[0]
+    const currentTime = new Date().toLocaleTimeString()
+    // Create TXT header
+    let txtContent = `SYNOPTIC DATA REPORT
+${"=".repeat(60)}
+REPORT INFORMATION:
+  Station: ${headerInfo.stationNo}
+  Date: ${headerInfo.year}/${headerInfo.month}/${headerInfo.day}
+  Report Generated: ${currentDate} at ${currentTime}
+  Total Records: ${currentData.length}
 
-    // Create header with station info
-    let txtContent = `SYNOP DATA\n`;
-    txtContent += `Station: ${headerInfo.stationNo}\n`;
-    txtContent += `Date: ${headerInfo.year}/${headerInfo.month}/${headerInfo.day}\n\n`;
+SYNOPTIC DATA VALUES:
+${"=".repeat(60)}`
 
-    // Add column headers
-    txtContent += `Time  C1   Iliii iRiXhvv Nddff 1SnTTT 2SnTdTdTd 3PPP/4PPP 6RRRtR 7wwW1W2 8NhClCmCh 2SnTnTnTn/InInInIn 56DlDmDh 57CDaEc C2 GG 58/59P24 (6RRRtR) 8N5Ch5h5 90dqqqt 91fqfqfq Remarks\n`;
-    txtContent += `-----------------------------------------------------------------------------------------------------------------------------------------------------------\n`;
-
-    // Add data rows in SYNOP format
-    currentData.forEach((entry) => {
-      const observingTime = entry.ObservingTime?.utcTime
-        ? new Date(entry.ObservingTime.utcTime)
-        : new Date();
-      const timeSlot = observingTime.getUTCHours().toString().padStart(2, "0");
-
-      // Format each field with fixed width
-      const formatField = (value: string | undefined, width: number) => {
-        return (value || "").padEnd(width).substring(0, width);
-      };
-
-      let synopLine = `${timeSlot}  `;
-      synopLine += `${formatField(entry.C1, 3)} `;
-      synopLine += `${formatField(entry.Iliii, 5)} `;
-      synopLine += `${formatField(entry.iRiXhvv, 6)} `;
-      synopLine += `${formatField(entry.Nddff, 5)} `;
-      synopLine += `${formatField(entry.S1nTTT, 6)} `;
-      synopLine += `${formatField(entry.S2nTddTddTdd, 9)} `;
-      synopLine += `${formatField(entry.P3PPP4PPPP, 8)} `;
-      synopLine += `${formatField(entry.RRRtR6, 6)} `;
-      synopLine += `${formatField(entry.wwW1W2, 7)} `;
-      synopLine += `${formatField(entry.NhClCmCh, 9)} `;
-      synopLine += `${formatField(entry.S2nTnTnTnInInInIn, 15)} `;
-      synopLine += `${formatField(entry.D56DLDMDH, 8)} `;
-      synopLine += `${formatField(entry.CD57DaEc, 7)} `;
-      synopLine += `${formatField(entry.C2, 2)} `;
-      synopLine += `${formatField(entry.GG, 2)} `;
-      synopLine += `${formatField(entry.P24Group58_59, 8)} `;
-      synopLine += `${formatField(entry.R24Group6_7, 8)} `;
-      synopLine += `${formatField(entry.NsChshs, 8)} `;
-      synopLine += `${formatField(entry.dqqqt90, 7)} `;
-      synopLine += `${formatField(entry.fqfqfq91, 7)} `;
-
+    // Add data records
+    currentData.forEach((entry, index) => {
+      const observingTime = entry.ObservingTime?.utcTime ? new Date(entry.ObservingTime.utcTime) : new Date()
+      const timeSlot = observingTime.getUTCHours().toString().padStart(2, "0")
+      txtContent += `\nRecord ${index + 1} (Time Slot: ${timeSlot}):\n`
+      txtContent += `${"-".repeat(30)}\n`
+      // Format each field with label and value
+      txtContent += `C1${" ".repeat(18)} ---> ${entry.C1 || "--"}\n`
+      txtContent += `Iliii${" ".repeat(15)} ---> ${entry.Iliii || "--"}\n`
+      txtContent += `iRiXhvv${" ".repeat(13)} ---> ${entry.iRiXhvv || "--"}\n`
+      txtContent += `Nddff${" ".repeat(15)} ---> ${entry.Nddff || "--"}\n`
+      txtContent += `1SnTTT${" ".repeat(14)} ---> ${entry.S1nTTT || "--"}\n`
+      txtContent += `2SnTdTdTd${" ".repeat(11)} ---> ${entry.S2nTddTddTdd || "--"}\n`
+      txtContent += `3PPP/4PPP${" ".repeat(11)} ---> ${entry.P3PPP4PPPP || "--"}\n`
+      txtContent += `6RRRtR${" ".repeat(14)} ---> ${entry.RRRtR6 || "--"}\n`
+      txtContent += `7wwW1W2${" ".repeat(13)} ---> ${entry.wwW1W2 || "--"}\n`
+      txtContent += `8NhClCmCh${" ".repeat(11)} ---> ${entry.NhClCmCh || "--"}\n`
+      txtContent += `2SnTnTnTn/InInInIn${" ".repeat(4)} ---> ${entry.S2nTnTnTnInInInIn || "--"}\n`
+      txtContent += `56DlDmDh${" ".repeat(12)} ---> ${entry.D56DLDMDH || "--"}\n`
+      txtContent += `57CDaEc${" ".repeat(13)} ---> ${entry.CD57DaEc || "--"}\n`
+      txtContent += `C2${" ".repeat(18)} ---> ${entry.C2 || "--"}\n`
+      txtContent += `GG${" ".repeat(18)} ---> ${entry.GG || "--"}\n`
+      txtContent += `58/59P24${" ".repeat(12)} ---> ${entry.P24Group58_59 || "--"}\n`
+      txtContent += `6RRRtR${" ".repeat(14)} ---> ${entry.R24Group6_7 || "--"}\n`
+      txtContent += `8N5Ch5h5${" ".repeat(12)} ---> ${entry.NsChshs || "--"}\n`
+      txtContent += `90dqqqt${" ".repeat(13)} ---> ${entry.dqqqt90 || "--"}\n`
+      txtContent += `91fqfqfq${" ".repeat(12)} ---> ${entry.fqfqfq91 || "--"}\n`
       // Add weather remarks if available
       if (entry.weatherRemark) {
-        synopLine += ` ${entry.weatherRemark.split(" - ")[1] || ""}`;
+        txtContent += `Weather Remarks${" ".repeat(6)} ---> ${entry.weatherRemark.split(" - ")[1] || "--"}\n`
       }
+    })
+    // Add footer
+    txtContent += `\n${"=".repeat(60)}
+Report End
+${"=".repeat(60)}`
+    // Create and download file
+    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `synoptic_data_${headerInfo.stationNo}_${headerInfo.year}${headerInfo.month}${headerInfo.day}_${currentDate}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
-      txtContent += synopLine + "\n";
-    });
-
-    // Create download link
-    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `synoptic_${headerInfo.stationNo}_${headerInfo.year}${headerInfo.month}${headerInfo.day}.txt`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   // Function to print the table
   const printTable = () => {
