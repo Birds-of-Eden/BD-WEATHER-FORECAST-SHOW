@@ -1131,16 +1131,17 @@ ${"=".repeat(60)}`;
                           >
                             {weatherObs?.lowCloudAmount || "--"}
                           </td>
+                           <td
+                            className={`border border-slate-300 p-1 ${weatherObs?.lowCloudDirection ? "text-blue-700 font-medium" : ""}`}
+                          >
+                            {weatherObs?.lowCloudDirection || "--"}
+                          </td>
                           <td
                             className={`border border-slate-300 p-1 ${weatherObs?.lowCloudHeight ? "text-blue-700 font-medium" : ""}`}
                           >
                             {weatherObs?.lowCloudHeight || "--"}
                           </td>
-                          <td
-                            className={`border border-slate-300 p-1 ${weatherObs?.lowCloudDirection ? "text-blue-700 font-medium" : ""}`}
-                          >
-                            {weatherObs?.lowCloudDirection || "--"}
-                          </td>
+                         
 
 
                           {/* Medium Cloud */}
