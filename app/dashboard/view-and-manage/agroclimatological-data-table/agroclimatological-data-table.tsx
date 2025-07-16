@@ -33,6 +33,7 @@ interface AgroclimatologicalData {
   updatedAt: string;
   elevation: number;
   date: string;
+  utcTime: string;
   solarRadiation: number;
   sunShineHour: number;
   airTempDry05m: number;
@@ -102,7 +103,7 @@ export default function AgroclimatologicalDataTable() {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [dateError, setDateError] = useState<string | null>(null);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
   const fetchData = async () => {
     try {
@@ -331,7 +332,7 @@ export default function AgroclimatologicalDataTable() {
     URL.revokeObjectURL(url);
   }
 
- function exportToTXT(
+  function exportToTXT(
     data: AgroclimatologicalData[],
     filename = "agroclimatological_data.txt"
   ) {
@@ -404,19 +405,31 @@ ${"=".repeat(60)}`;
     URL.revokeObjectURL(url);
   }
 
+  // if (error) {
+  //   return (
+  //     <Card className="w-full border-red-200">
+  //       <CardContent className="flex flex-col items-center justify-center py-12">
+  //         <div className="text-red-600 text-center">
+  //           <h3 className="text-lg font-semibold mb-2">Error Loading Data</h3>
+  //           <p className="text-sm mb-4">{error}</p>
+  //           <Button onClick={fetchData} variant="outline" className="gap-2">
+  //             <RefreshCw className="h-4 w-4" />
+  //             Retry
+  //           </Button>
+  //         </div>
+  //       </CardContent>
+  //     </Card>
+  //   );
+  // }
+
   return (
     <div className="w-full space-y-6">
       {/* Header Card */}
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
         <CardHeader>
           <CardTitle className="text-center text-2xl font-bold text-blue-800">
-            BANGLADESH METEOROLOGICAL DEPARTMENT
+            AGROCLIMATOLOGICAL DATA
           </CardTitle>
-          <div className="text-center space-y-1">
-            <p className="text-xl font-bold text-blue-800">
-              AGROCLIMATOLOGICAL DATA
-            </p>
-          </div>
         </CardHeader>
       </Card>
 
@@ -735,7 +748,7 @@ ${"=".repeat(60)}`;
                       {/* Hour */}
                       <td className="border border-slate-300 p-2 text-center">
                         <Badge variant="secondary" className="font-mono">
-                          24:00
+                          {record.utcTime}
                         </Badge>
                       </td>
 
@@ -746,7 +759,7 @@ ${"=".repeat(60)}`;
 
                       {/* Sun Shine Hour */}
                       <td className="border border-slate-300 p-2 text-center font-medium text-orange-700">
-                        {Number(record.sunShineHour).toFixed(2)}
+                      {Number(record.sunShineHour).toFixed(2)}
                       </td>
 
                       {/* Air Temperature */}
